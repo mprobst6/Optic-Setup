@@ -48,8 +48,8 @@ down = (1,-1)
 # Maximum Move Speed
 max_speed = 1777830 # get_max_velocity_du # 1777830, du stands for device units
 
-kcube_yi = KCubeDCServo(27258530)   
-kcube_ya = KCubeDCServo(27258547)
+kcube_yi = KCubeDCServo(27258547)   
+kcube_ya = KCubeDCServo(27258530)
 kcube_z = KCubeDCServo(27258551)
 kcube_y = KCubeDCServo(27258581)
 kcube_x = KCubeDCServo(27258584)
@@ -97,10 +97,19 @@ class PS4Controller(object):
 
                 if event.type == pygame.JOYBUTTONDOWN:
                     self.button_data[event.button] = True    
+                    if self.button_data[options_button] == True:
+                        kcube_x.stop_immediate()
+                        kcube_y.stop_immediate()
+                        kcube_z.stop_immediate()
+                        kcube_yi.stop_immediate()
+                        kcube_ya.stop_immediate()
+
+
                 elif event.type == pygame.JOYBUTTONUP:
                     self.button_data[event.button] = False
                     # print('event.button:',event.button)
                     
+
 
                 elif event.type == pygame.JOYHATMOTION:
                     self.hat_data[event.hat] = event.value
@@ -125,6 +134,8 @@ class PS4Controller(object):
                                 print('hello')
                             elif self.hat_data[i] == down:
                                 print('hello')
+
+
                 elif event.type == pygame.JOYAXISMOTION:
 # First two if statements set the velocity based on whether the button has been pressed or not
                     if event.axis == horizontal_left_joystick or event.axis == vertical_left_joystick: # controls the left joystick
@@ -144,53 +155,40 @@ class PS4Controller(object):
                             kcube_x.stop()
                         else:
                             kcube_x.velocity(left_velocity)
-                            print("x velocity: {}".format(left_velocity))
+                            # print("x velocity: {}".format(left_velocity))
 # Controls motion in the y direction
                     elif event.axis == vertical_left_joystick:
                         if left_velocity == 0: # calls stop when the velocity is zero
                             kcube_y.stop()
                         else:
                             kcube_y.velocity(left_velocity)
-                            print("y velocity {}".format(left_velocity))
+                            # print("y velocity {}".format(left_velocity))
 # When the trigger is held, control the yi
                     elif event.axis == horizontal_right_joystick:
-                        if self.button_data[right_front_trigger] == False:
+                        if self.button_data[right_front_trigger] == True:
                             if right_velocity == 0:
                                 kcube_yi.stop()
                             else:
                                 kcube_yi.velocity(right_velocity)
                                 print("yi velocity: {}".format(right_velocity))
-# else control z
-                        else: # control y axis when the button is not held
-                            if right_velocity == 0:
-                                kcube_z.stop()
-                            else:
-                                kcube_z.velocity(right_velocity)
-                                print("z velocity: {}".format(right_velocity))
+# right/left on the left joystick does nothing when the right trigger is not held because only up and down controls the z
+                        else:
+                            print("left right does nothing right now")
 # When the trigger is held, control ya
                     elif event.axis == vertical_right_joystick:
-                        if self.button_data[right_front_trigger] == False:
+                        if self.button_data[right_front_trigger] == True:
                             if right_velocity == 0:
                                 kcube_ya.stop()
                             else:
                                 kcube_ya.velocity(right_velocity)
                                 print("ya velocity: {}".format(right_velocity))
-# right/left on the left joystick does nothing when the right trigger is not held because only up and down controls the z
-                        else:
-                            print("doing nothing")
-
-                elif event.type == pygame.JOYBUTTONDOWN:
-                    self.button_data[event.button] = True
-                    # print('event.button:',event.button)
-                    # print(self.button_data)
-                elif event.type == pygame.JOYBUTTONUP:
-                    self.button_data[event.button] = False
-                    # print('event.button:',event.button)
-                elif event.type == pygame.JOYHATMOTION:
-                    self.hat_data[event.hat] = event.value
-                    # print(self.hat_data)
-                    # print('event.hat:',event.hat)
-
+# else control z
+                        else: # control z axis when the button is not held
+                            if right_velocity == 0:
+                                kcube_z.stop()
+                            else:
+                                kcube_z.velocity(right_velocity)
+                                print("z velocity: {}".format(right_velocity))
 if __name__ == "__main__":
     ps4 = PS4Controller()
     ps4.init()
