@@ -38,8 +38,12 @@ vertical_right_joystick = 3
 # Hat Mapping
 up = (0,1); down = (0,-1); left = (1,0); right = (-1,0)
 
+# Ranges
+translation_range = 25 # mm
+rotation_range = 6 # mm
+
 # Center commands
-translation_center = 12.5; rotation_center = 6
+translation_center = translation_range/2; rotation_center = rotation_range/2
 
 # Jump Distance
 distance = 1  # hopefully this is in mm
@@ -72,6 +76,7 @@ class PS4Controller(object):
     controller = None
     axis_data = None
     button_data = None
+    temp_button_data = None # temporary button data, used to tell whether a particular button was pressed or not
     hat_data = None
 
     def init(self):
@@ -90,8 +95,10 @@ class PS4Controller(object):
 
         if not self.button_data:
             self.button_data = {}
+            self.temp_button_data = {}
             for i in range(self.controller.get_numbuttons()):
                 self.button_data[i] = False
+                self.temp_button_data[i] = False
 
         if not self.hat_data:
             self.hat_data = {}
@@ -105,11 +112,11 @@ class PS4Controller(object):
 ### BUTTON DOWN COMMANDS ###
 ############################
                 if event.type == pygame.JOYBUTTONDOWN:
-                    self.button_data[event.button] = True    
-                    if self.button_data[options_button] == True: # emergency stop
+                    self.temp_button_data[event.button] = True
+                    if self.temp_button_data[options_button] == True: # emergency stop
                         for motor in all_motors:
                             motor.stop_immediate()
-                    elif self.button_data[share_button] == True: # center command
+                    if self.temp_button_data[share_button] == True: # center command
                         for motor in all_motors:
                             motor.stop()
                         for motor in rotation:
@@ -118,20 +125,29 @@ class PS4Controller(object):
                         for motor in translation:
                             motor.move_absolute(translation_center)
                             print("moving translation motors")
+                    if self.temp_button_data[right_front_trigger] != self.button_data[right_front_trigger]: # stop z when the trigger is pressed
+                        kcube_z.stop_immediate()
+                        print("stopping z")
+                    self.button_data[event.button] = self.temp_button_data[event.button] # set button data to the actual buttons
 
 ##########################
 ### BUTTON UP COMMANDS ###
 ##########################
                 elif event.type == pygame.JOYBUTTONUP:
-                    self.button_data[event.button] = False
+                    self.temp_button_data[event.button] = False
 ### This code is a problem because whenever ANY button is lifted, if the trigger is not being held, the rotation motors stop.
 ### I would rather the rotation motors stop only when the trigger is lifted
+### That should be fine because I don't want the rotation motors moving unless I'm holding the trigger
+                    if self.button_data[right_front_trigger] != self.temp_button_data[right_front_trigger]: # detects releasing the button
+                        for motor in rotation:
+                            motor.stop_immediate()
+                            print("stopping yi and ya")
 
+                    self.button_data[event.button] = self.temp_button_data[event.button]
+               
+# if I want the triggers to set the yi and ya and only change when I hit the trigger again, I will have to have button down (or up) "NOT" button data
+# and buttonup does nothing, that was it stays "true" until the button is pressed again
 
-#                     if self.button_data[right_front_trigger] == False:  # stop yi and ya when the button is released
-#                         for motor in rotation:
-#                             motor.stop()
-# 
 ####################
 ### HAT COMMANDS ###
 ####################
