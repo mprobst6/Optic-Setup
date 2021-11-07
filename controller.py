@@ -16,6 +16,7 @@ import pygame
 import py_thorlabs_ctrl.kinesis
 py_thorlabs_ctrl.kinesis.init(r'C:\Program Files\Thorlabs\Kinesis')
 from py_thorlabs_ctrl.kinesis.motor import KCubeDCServo
+import time
 
 # Button Mapping
 x_button = 0
@@ -40,7 +41,10 @@ up = (0,1); down = (0,-1); left = (1,0); right = (-1,0)
 
 # Ranges
 translation_range = 25 # mm
-rotation_range = 6 # mm
+rotation_range = 12 # mm
+
+# Safety edges
+buffer = 0.5 # mm need a way to stop the motor when it reaches the buffer, but then move it just inside the buffer so it can start moving the other direction
 
 # Center commands
 translation_center = translation_range/2; rotation_center = rotation_range/2
@@ -118,16 +122,13 @@ class PS4Controller(object):
                             motor.stop_immediate()
                     if self.temp_button_data[share_button] == True: # center command
                         for motor in all_motors:
-                            motor.stop()
+                            motor.stop_immediate()
                         for motor in rotation:
                             motor.move_absolute(rotation_center)
-                            print("moving rotation motors")
                         for motor in translation:
                             motor.move_absolute(translation_center)
-                            print("moving translation motors")
                     if self.temp_button_data[right_front_trigger] != self.button_data[right_front_trigger]: # stop z when the trigger is pressed
                         kcube_z.stop_immediate()
-                        print("stopping z")
                     self.button_data[event.button] = self.temp_button_data[event.button] # set button data to the actual buttons
 
 ##########################
@@ -135,39 +136,26 @@ class PS4Controller(object):
 ##########################
                 elif event.type == pygame.JOYBUTTONUP:
                     self.temp_button_data[event.button] = False
-### This code is a problem because whenever ANY button is lifted, if the trigger is not being held, the rotation motors stop.
-### I would rather the rotation motors stop only when the trigger is lifted
-### That should be fine because I don't want the rotation motors moving unless I'm holding the trigger
                     if self.button_data[right_front_trigger] != self.temp_button_data[right_front_trigger]: # detects releasing the button
                         for motor in rotation:
                             motor.stop_immediate()
-                            print("stopping yi and ya")
-
                     self.button_data[event.button] = self.temp_button_data[event.button]
                
-# if I want the triggers to set the yi and ya and only change when I hit the trigger again, I will have to have button down (or up) "NOT" button data
-# and buttonup does nothing, that was it stays "true" until the button is pressed again
-
 ####################
 ### HAT COMMANDS ###
 ####################
                 elif event.type == pygame.JOYHATMOTION:
                     self.hat_data[event.hat] = event.value
-                    print(self.hat_data)
-                    print('event.hat:',event.hat)
                     for i in range(self.controller.get_numhats()):
                         if self.button_data[right_front_trigger] == False: # no trigger, hats control x and y
                             if self.hat_data[i] == right:
                                 kcube_x.move_relative(distance)
-                                print("moving right")
                             elif self.hat_data[i] == left:
                                 kcube_x.move_relative(-distance)
-                                print("moving left")
                             elif self.hat_data[i] == up:
 	                            kcube_y.move_relative(distance)
                             elif self.hat_data[i] == down:
                                 kcube_y.move_relative(-distance)
-                                print("moving backward")
                         elif self.button_data[right_front_trigger] == True: # trigger, hats control z
                             if self.hat_data[i] == up:
                                 kcube_z.move_relative(distance)
