@@ -13,13 +13,6 @@
 # Distributed under terms of the MIT license.
 # change joystick mapping to all caps
 
-# button mappings stay the same
-# make other things into a class
-
-
-
-
-
 
 import pygame
 import py_thorlabs_ctrl.kinesis
@@ -45,24 +38,13 @@ vertical_left_joystick = 1
 horizontal_right_joystick = 2
 vertical_right_joystick = 3
 
-# Hat Mapping
-up = (0,1); down = (0,-1); left = (1,0); right = (-1,0)
 
 # Ranges
 TRANSLATION_RANGE = 25 # mm
 ROTATION_RANGE = 12 # mm
 
-# Safety edges
-buffer = 0.5 # mm need a way to stop the motor when it reaches the buffer, but then move it just inside the buffer so it can start moving the other direction
-
 # Center commands
 translation_center = TRANSLATION_RANGE/2; rotation_center = ROTATION_RANGE/2
-
-# Maximum Move Speed
-max_speed = 1777830 # get_max_velocity_du # 1777830, du stands for device units
-
-
-print('Ready for input')
 
 class PS4Controller(object):
     """Class representing the PS4 controller. Pretty straightforward functionality."""
@@ -76,14 +58,20 @@ class PS4Controller(object):
 
     # Specify the move distance
     move_distance = 1
+    
+    # Safety edges
+    buffer = 0.5 # mm need a way to stop the motor when it reaches the buffer, but then move it just inside the buffer so it can start moving the other direction
+    MAX_SPEED = 1777830
 
-	
+	# Hat Mapping
+    UP = (0,1); DOWN = (0,-1); LEFT = (1,0); RIGHT = (-1,0)
+
 	# put these and the motor groups in the init
-    kcube_yi = KCubeDCServo(27258547)
-    kcube_ya = KCubeDCServo(27258530)
-    kcube_z = KCubeDCServo(27258551)
-    kcube_y = KCubeDCServo(27258581)
-    kcube_x = KCubeDCServo(27258584)
+    kcube_yi = KCubeDCServo(27258547,"rotation")
+    kcube_ya = KCubeDCServo(27258530,"rotation")
+    kcube_z = KCubeDCServo(27258551,"translation")
+    kcube_y = KCubeDCServo(27258581,"translation")
+    kcube_x = KCubeDCServo(27258584,"translation")
 		
 	# Make lists to operate on sets of motors
     all_motors = [kcube_x,kcube_y,kcube_z,kcube_yi,kcube_ya]
@@ -150,7 +138,7 @@ class PS4Controller(object):
                     self.button_data[event.button] = self.temp_button_data[event.button] # set button data to the actual buttons
 
 ##########################
-### BUTTON UP COMMANDS ###
+### BUTTON self.UP COMMANDS ###
 ##########################
                 elif event.type == pygame.JOYBUTTONUP:
                     self.temp_button_data[event.button] = False
@@ -166,18 +154,18 @@ class PS4Controller(object):
                     self.hat_data[event.hat] = event.value
                     for i in range(self.controller.get_numhats()):
                         if self.button_data[right_front_trigger] == False: # no trigger, hats control x and y
-                            if self.hat_data[i] == right:
+                            if self.hat_data[i] == self.RIGHT:
                                 self.kcube_x.move_relative(self.move_distance)
-                            elif self.hat_data[i] == left:
+                            elif self.hat_data[i] == self.LEFT:
                                 self.kcube_x.move_relative(-self.move_distance)
-                            elif self.hat_data[i] == up:
+                            elif self.hat_data[i] == self.UP:
 	                            self.kcube_y.move_relative(self.move_distance)
-                            elif self.hat_data[i] == down:
+                            elif self.hat_data[i] == self.DOWN:
                                 self.kcube_y.move_relative(-self.move_distance)
                         elif self.button_data[right_front_trigger] == True: # trigger, hats control z
-                            if self.hat_data[i] == up:
+                            if self.hat_data[i] == self.UP:
                                 self.kcube_z.move_relative(self.move_distance)
-                            elif self.hat_data[i] == down:
+                            elif self.hat_data[i] == self.DOWN:
                                 self.kcube_z.move_relative(-self.move_distance)
 
 #########################
@@ -187,11 +175,11 @@ class PS4Controller(object):
 # First two if statements set the velocity based on whether the button has been pressed or not
                     if event.axis == horizontal_left_joystick or event.axis == vertical_left_joystick: # controls the left joystick
 # negative signs necessary to align the controller directions with the joystick directions
-                        left_velocity_du = int(-round(event.value,2)*max_speed)
+                        left_velocity_du = int(-round(event.value,2)*self.MAX_SPEED)
                         if self.button_data[left_joystick_button] == False:
                             left_velocity_du = 0.2*left_velocity_du # 20% of speed without button push
                     if event.axis == horizontal_right_joystick or event.axis == vertical_right_joystick: # controls the right joystick
-                        right_velocity_du = int(-round(event.value,2)*max_speed)
+                        right_velocity_du = int(-round(event.value,2)*self.MAX_SPEED)
                         if self.button_data[right_joystick_button] == False:
                             right_velocity_du = 0.2*right_velocity_du # 20% of speed without button push
                             
