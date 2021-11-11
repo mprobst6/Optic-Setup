@@ -1,23 +1,5 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# This file presents an interface for interacting with the Playstation 4 Controller
-# in Python. Simply plug your PS4 controller into your computer using USB and run this
-# script!
-#
-# NOTE: I assume in this script that the only joystick plugged in is the PS4 controller.
-#       if this is not the case, you will need to change the class accordingly.
-#
-# Copyright © 2015 Clay L. McLeod <clay.l.mcleod@gmail.com>
-#
-# Distributed under terms of the MIT license.
-# change joystick mapping to all caps
-
-
 import pygame
-import py_thorlabs_ctrl.kinesis
-py_thorlabs_ctrl.kinesis.init(r'C:\Program Files\Thorlabs\Kinesis')
-from py_thorlabs_ctrl.kinesis.motor import KCubeDCServo
+from utils import *
 import time
 
 # Button Mapping
@@ -37,7 +19,6 @@ horizontal_left_joystick = 0
 vertical_left_joystick = 1
 horizontal_right_joystick = 2
 vertical_right_joystick = 3
-
 
 # Ranges
 TRANSLATION_RANGE = 25 # mm
@@ -65,20 +46,6 @@ class PS4Controller(object):
 
 	# Hat Mapping
     UP = (0,1); DOWN = (0,-1); LEFT = (1,0); RIGHT = (-1,0)
-
-	# put these and the motor groups in the init
-    kcube_yi = KCubeDCServo(27258547,"rotation")
-    kcube_ya = KCubeDCServo(27258530,"rotation")
-    kcube_z = KCubeDCServo(27258551,"translation")
-    kcube_y = KCubeDCServo(27258581,"translation")
-    kcube_x = KCubeDCServo(27258584,"translation")
-		
-	# Make lists to operate on sets of motors
-    all_motors = [kcube_x,kcube_y,kcube_z,kcube_yi,kcube_ya]
-    translation = [kcube_x,kcube_y,kcube_z]
-    rotation = [kcube_yi,kcube_ya]
-    left_group = [kcube_x,kcube_y]
-    right_group = [kcube_yi,kcube_ya,kcube_z]
 	
     for motor in all_motors:
         motor.create()
